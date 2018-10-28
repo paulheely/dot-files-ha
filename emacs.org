@@ -13,7 +13,7 @@
    While I often use [[http://emacsformacosx.com/builds][Emacs for Mac]], lately, I've been building Emacs
    from source using [[http://brew.sh/][Homebrew]]. I start by adding the following dependency:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew cask install xquartz
    #+END_SRC
 
@@ -23,7 +23,7 @@
    source after applying [[https://github.com/minimal/emacs/commit/812dd5119645a09bc025a9dddedad9474d12ecb6][this patch]]. According to the Homebrew
    documentation (see [[https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Formula-Cookbook.md#patches][the Patches section]]), we first:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew edit emacs
    #+END_SRC
 
@@ -37,7 +37,7 @@
 
    And then build from source especially for the Mac:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew install emacs --HEAD --use-git-head --with-cocoa --with-gnutls --with-librsvg --with-ns --with-imagemagick
 
      brew linkapps emacs
@@ -49,7 +49,7 @@
 
    All Homebrew options for Emacs can be seen with the command:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew options emacs
    #+END_SRC
 
@@ -171,9 +171,8 @@
 
 ** Init File Support
 
-   Load up my collection of enhancements to Emacs Lisp, including [[https://github.com/magnars/dash.el][dash]]
-   and [[https://github.com/magnars/s.el][s]] for string manipulation, as much of my initialization code
-   depends on it.
+   Load up a collection of enhancements to Emacs Lisp, including [[https://github.com/magnars/dash.el][dash]],
+   [[https://github.com/magnars/s.el][s]] for string manipulation, and [[https://github.com/rejeep/f.el][f]] for file manipulation.
 
    #+BEGIN_SRC elisp
      (require 'cl)
@@ -183,6 +182,9 @@
        :config (eval-after-load "dash" '(dash-enable-font-lock)))
 
      (use-package s
+       :ensure t)
+
+     (use-package f
        :ensure t)
     #+END_SRC
 
@@ -222,7 +224,7 @@
 
    To get started on the Mac, install the goodies:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew install gpg
    #+END_SRC
 
@@ -281,7 +283,7 @@
   into its own file:
 
   #+BEGIN_SRC elisp
-    (require 'init-mode-line2)
+    (require 'my-powerline)
   #+END_SRC
 
   And the best colored highlighting of selected text needs to be both
@@ -528,9 +530,11 @@
           ((= num 0)                (ha/highlight-block))
           ((= num 1)                (fancy-narrow-to-defun))
           (t                        (progn (ha/expand-region num)
-                                           (fancy-narrow-to-region (region-beginning) (region-end))))))
+                                           (fancy-narrow-to-region (region-beginning) (region-end))
+                                           (setq mark-active nil)))))
 
-       :bind ("C-M-+" . ha/highlight-section))
+       :bind (("C-M-+" . ha/highlight-section)
+              ("C-<f12>" . ha/highlight-section)))
    #+END_SRC
 
    This nifty function from [[http://endlessparentheses.com/emacs-narrow-or-widen-dwim.html][Endless Parenthesis]] is a nice replacement
@@ -640,8 +644,8 @@
 
 ** Multiple Cursors
 
-   I like Magmar's [[https://github.com/emacsmirror/multiple-cursors][multiple-cursors]] project.  It doesn't have any
-    default keybindings, so I set up these:
+   I'm intrigued with Magmar's [[https://github.com/emacsmirror/multiple-cursors][multiple-cursors]] project.  It doesn't
+    have any default keybindings, so I set up these:
 
    #+BEGIN_SRC elisp
      (use-package multiple-cursors
@@ -668,6 +672,17 @@
               ("C-c C-. C-e" . mc/edit-ends-of-lines)
               ("C-M-<mouse-1>" . mc/add-cursor-on-click)))
    #+END_SRC
+
+   However, Like [[http://nullprogram.com/blog/2017/09/07/][Chris Wellons said]]:
+   #+BEGIN_QUOTE
+    I’ve come to the conclusion that multiple cursors is all hat and
+    no cattle. It doesn’t compose well with other editing commands, it
+    doesn’t scale up to large operations, and it’s got all sorts of
+    flaky edge cases (off-screen cursors). Nearly anything you can do
+    with multiple cursors, you can do better with old,
+    well-established editing paradigms.
+   #+END_QUOTE
+   That said, I'm still going to impress my friends with it.
 
 ** Expand Region
 
@@ -978,23 +993,29 @@
 
 *** Perspective
 
-    The [[https://github.com/nex3/perspective-el][perspective project]] and the
+    The [[https://github.com/nex3/perspective-el][perspective project]] and Batsov's [[https://github.com/bbatsov/projectile][projectile project]] are now
+    [[https://github.com/bbatsov/persp-projectile][joined together]] which means that each project has its own perspective.
 
     #+BEGIN_SRC elisp
       (use-package perspective
         :ensure t
         :bind ("C-x x x" . persp-switch-last)
-        :config (persp-mode)
-        (defun persp-update-modestring ()
-          "Update `persp-modestring' to reflect the current perspective."
-          (when persp-show-modestring
-              (setq persp-modestring (propertize (persp-name persp-curr) 'face 'persp-selected-face))))
+        :init (persp-mode +1)
 
         (use-package persp-projectile
           :ensure t
-          :bind (:map projectile-mode-map
-                      ("X" . projectile-persp-switch-project))))
+          :bind ("C-x x P" . projectile-persp-switch-project))
+
+        :config
+          (setq persp-interactive-completion-function #'ido-completing-read)
+          (persp-turn-off-modestring))
     #+END_SRC
+
+    My workflow consists of:
+    - =C-x x P= to investigate a new project with its new perspective
+      (this also saves off whatever I was doing)
+    - =C-x x x= switches to whatever I was doing before
+    - =C-x x s= switches to a project's perspective based on its name
 
 *** Workgroups
 
@@ -1237,7 +1258,7 @@
    I use the standard [[http://emacswiki.org/emacs/GrepMode#toc1][grep package]] in Emacs, but need a later
    version of Gnu Grep. On Mac OS X, run these two commands:
 
-   #+BEGIN_SRC sh
+   #+BEGIN_SRC shell
      brew tap homebrew/dupes
      brew install homebrew/dupes/grep
    #+END_SRC
@@ -1247,7 +1268,7 @@
     With [[https://twitter.com/_wilfredh][Wilfred Hughes]]' fancy [[https://github.com/Wilfred/ag.el/#agel][ag package]], I’ve switch from [[http://beyondgrep.com][ack]] to the
     [[http://geoff.greer.fm/2011/12/27/the-silver-searcher-better-than-ack/][Silver Searcher]]:
 
-    #+BEGIN_SRC sh
+    #+BEGIN_SRC shell
       brew install ag
     #+END_SRC
 
@@ -1364,7 +1385,8 @@
        (let ((last-ido "~/.emacs.d/ido.last"))
          (when (file-exists-p last-ido)
            (delete-file last-ido)))
-       :bind ("C-c f f" . recentf-open-files))
+
+       :bind ("C-c f r" . recentf-open-files))
    #+END_SRC
 
    We do not want to stat all the files when Emacs starts up because
@@ -1497,12 +1519,11 @@
 
 ** Spell Checking
 
-   I like spell checking with [[http://www.emacswiki.org/emacs/FlySpell][FlySpell]], which uses the built-in
-   spell-check settings of [[https://www.gnu.org/software/ispell/][ispell]].
+   Spell checking with [[http://www.emacswiki.org/emacs/FlySpell][FlySpell]], which uses the built-in settings of
+   [[https://www.gnu.org/software/ispell/][ispell]].   The [[http://aspell.net][ASpell]] project is better supported than ISpell, and
+   it seems to be better than Hunspell for programming modes.
 
-   The [[http://aspell.net][ASpell]] project is better supported than ISpell.
-
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew install aspell
    #+END_SRC
 
@@ -1523,27 +1544,66 @@
 
        :config
        (setq ispell-program-name "/usr/local/bin/aspell"
+             ispell-local-dictionary "en_US"
              ispell-dictionary "american" ; better for aspell
              ispell-extra-args '("--sug-mode=ultra" "--lang=en_US")
-             ispell-list-command "--list")
-
-       (add-to-list 'ispell-local-dictionary-alist '(nil
-                                                     "[[:alpha:]]"
-                                                     "[^[:alpha:]]"
-                                                     "['‘’]"
-                                                     t
-                                                     ("-d" "en_US")
-                                                     nil
-                                                     utf-8)))
+             ispell-list-command "--list"
+             ispell-local-dictionary-alist '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "['‘’]"
+                                           t ; Many other characters
+                                           ("-d" "en_US") nil utf-8))))
    #+END_SRC
 
    ASpell automatically configures a personal dictionary
    at =~/.aspell.en.pws=, so no need to configure that.
 
+   A possibly nifty feature of aspell is the ability to spellcheck
+   individual words in CamelCase that is used extensively in some
+   code (for details, see [[http://blog.binchen.org/posts/what-s-the-best-spell-check-set-up-in-emacs.html][this article]]).
+
+   #+BEGIN_SRC elisp
+     (use-package flyspell
+       :config
+       (defun flyspell-detect-ispell-args (&optional run-together)
+         "if RUN-TOGETHER is true, spell check the CamelCase words."
+         (let (args)
+           (setq args (list "--sug-mode=ultra" "--lang=en_US"))
+           (if run-together
+               (setq args (append args '("--run-together" "--run-together-limit=5" "--run-together-min=2"))))
+           args))
+
+       ;; ispell-cmd-args is useless, it's the list of *extra* arguments we will append to the ispell process when "ispell-word" is called.
+       ;; ispell-extra-args is the command arguments which will *always* be used when start ispell process
+       (setq-default ispell-extra-args (flyspell-detect-ispell-args t))
+
+       (defadvice ispell-word (around my-ispell-word activate)
+         (let ((old-ispell-extra-args ispell-extra-args))
+           (ispell-kill-ispell t)
+           (setq ispell-extra-args (flyspell-detect-ispell-args))
+           ad-do-it
+           (setq ispell-extra-args old-ispell-extra-args)
+           (ispell-kill-ispell t)))
+
+       (defadvice flyspell-auto-correct-word (around my-flyspell-auto-correct-word activate)
+         (let ((old-ispell-extra-args ispell-extra-args))
+           (ispell-kill-ispell t)
+           ;; use emacs original arguments
+           (setq ispell-extra-args (flyspell-detect-ispell-args))
+           ad-do-it
+           ;; restore our own ispell arguments
+           (setq ispell-extra-args old-ispell-extra-args)
+           (ispell-kill-ispell t)))
+
+       (defun text-mode-hook-setup ()
+         ;; Turn off RUN-TOGETHER option when spell check text-mode
+         (setq-local ispell-extra-args (flyspell-detect-ispell-args)))
+
+       (add-hook 'text-mode-hook 'text-mode-hook-setup))
+   #+END_SRC
+
    According to [[http://pragmaticemacs.com/emacs/jump-back-to-previous-typo/][this essay]], we can make a =flyspell-goto-previous-error=
    (which really should be added to the official =flyspell= project):
 
-   #+BEGIN_SRC elisp
+   #+BEGIN_SRC elisp :tangle no
      (defun flyspell-goto-previous-error (arg)
        "Go to ARG previous spelling error."
        (interactive "p")
@@ -1701,8 +1761,9 @@
     multiple files, use my [[file:elisp/better-breadcrumbs.el][better-breadcrumbs]] mode.
 
     #+BEGIN_SRC elisp
-      (require 'better-breadcrumbs)
-      (better-breadcrumb-mode +1)
+      ; (require 'better-breadcrumbs)
+      (load-library "better-breadcrumbs")
+      (better-breadcrumbs-mode +1)
     #+END_SRC
 
 ** Smart Comments
@@ -1856,26 +1917,26 @@
    thirty years, we are still using good ol’ ctags...well,
    [[http://ctags.sourceforge.net][Exuberant Ctags]].   Install with Homebrew:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew install --HEAD ctags
    #+END_SRC
 
    On Ubuntu Linux, do:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      sudo apt-get install -y exuberant-ctags
    #+END_SRC
 
    Note: for every project, run the following command:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      ctags -e -R .
    #+END_SRC
 
    I want to be able to add headers from my =org-mode= files as
    a /language option/:
 
-   #+BEGIN_SRC sh :tangle ~/.ctags :comments no
+   #+BEGIN_SRC shell :tangle ~/.ctags :comments no
      --langdef=org
      --langmap=org:.org
      --regex-org=/^\*+[ \t]+([a-zA-Z0-9_ ]+)/\1/d,definition/
@@ -2091,95 +2152,11 @@
 
 ** Emacs Lisp
 
-   Sure, everything here is in Emacs Lisp, but this section helps me
-   write more of that... like making snazzy symbols and colorizing the
-   variables.
-
-   The [[https://github.com/ankurdave/color-identifiers-mode][color-identifiers]] project (unlike [[https://github.com/Fanael/rainbow-identifiers][others]]), downplay the
-   keywords, and increase the colorizing of the variables.
+   See [[file:emacs-elisp.org][emacs-elisp]] for details of my setup for programming Emacs Lisp.
 
    #+BEGIN_SRC elisp
-     (use-package color-identifiers-mode
-       :ensure t
-       :init
-         (add-hook 'emacs-lisp-mode-hook 'color-identifiers-mode)
-       :diminish color-identifiers-mode)
+     (require 'init-elisp)
    #+END_SRC
-
-   The only real snazzy symbol that I like is replacing the =lambda=
-   with λ:
-
-   #+BEGIN_SRC elisp
-     (use-package lisp-mode
-       :bind (:map emacs-lisp-mode-map ("C-c C-z" . ielm))
-       :init
-       (defconst lisp--prettify-symbols-alist
-         '(("lambda"  . ?λ)      ; Shrink this
-           ("."       . ?•)))    ; Enlarge this
-       :config
-       (add-hook 'emacs-lisp-mode-hook 'global-prettify-symbols-mode)
-       (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
-       (add-hook 'emacs-lisp-mode-hook 'activate-aggressive-indent))
-   #+END_SRC
-
-*** Paredit
-
-    One of the cooler features of Emacs is the [[http://emacswiki.org/emacs/ParEdit][ParEdit mode]] which
-    keeps all parenthesis balanced in Lisp-oriented languages.
-    See this [[http://www.emacswiki.org/emacs/PareditCheatsheet][cheatsheet]].
-
-    #+BEGIN_SRC elisp
-      (use-package paredit
-        :ensure t
-        :init
-          (add-hook 'emacs-lisp-mode-hook 'paredit-mode))
-    #+END_SRC
-
-*** Nicer Paren Matching
-
-    The reverse mode of the default parenthesis matching doesn’t match
-    as well, so [[http://www.emacswiki.org/emacs/ShowParenMode][this code]] just makes it bold and more obvious:
-
-    #+BEGIN_SRC elisp
-      (use-package paren
-        :init
-        (set-face-background 'show-paren-match (face-background 'default))
-        (set-face-foreground 'show-paren-match "#afa")
-        (set-face-attribute  'show-paren-match nil :weight 'black)
-        (set-face-background 'show-paren-mismatch (face-background 'default))
-        (set-face-foreground 'show-paren-mismatch "#c66")
-        (set-face-attribute  'show-paren-mismatch nil :weight 'black))
-    #+END_SRC
-
-    While we are at it, let's dim the parens:
-
-    #+BEGIN_SRC elisp
-      (use-package paren-face
-        :ensure t
-        :init
-        (global-paren-face-mode))
-    #+END_SRC
-
-*** Insert Comment of Eval
-
-    While writing and documenting Emacs Lisp code, it would be helpful
-    to insert the results of evaluation of an s-expression directly
-    into the code as a comment:
-
-    #+BEGIN_SRC elisp
-      (use-package lisp-mode
-        :config (defun eval-and-comment-output ()
-                  "Add the output of the sexp as a comment after the sexp"
-                  (interactive)
-                  (save-excursion
-                    (end-of-line)
-                    (condition-case nil
-                        (princ (concat " ; -> " (pp-to-string (eval (preceding-sexp))))
-                               (current-buffer))
-                      (error (message "Invalid expression")))))
-
-        :bind ("C-x e" . eval-and-comment-output))
-    #+END_SRC
 
 ** Clojure
 
@@ -2272,14 +2249,12 @@
        :ensure t)
    #+END_SRC
 
-   What about being able to see the [[https://github.com/voins/mo-git-blame][Git blame]] in a buffer?
+   Finally, I want to play with [[https://github.com/pidu/git-timemachine][Git Time Machine]] project for stepping
+   backward through the version history of a file:
 
    #+BEGIN_SRC elisp
-     (use-package mo-git-blame
-        :ensure t)
+     (use-package git-timemachine)
    #+END_SRC
-
-   Run =mo-git-blame-current= to see the goodies.
 
 ** Magit
 
@@ -2335,7 +2310,7 @@
 
    Install the [[http://www.graphviz.org/][Graphviz]] and [[http://plantuml.sourceforge.net/download.html][PlantUML]] projects using Homebrew:
 
-   #+BEGIN_SRC sh :tangle no
+   #+BEGIN_SRC shell
      brew install graphviz
      brew link graphviz
      brew install plantuml
@@ -2416,11 +2391,11 @@
 * Frivolous
 
   Life must be more whimsical. To begin, install the =fortune= package:
-  #+BEGIN_SRC sh :tangle no
+  #+BEGIN_SRC shell
     brew install fortune   # Installs in /usr/local/share/games/fortunes
   #+END_SRC
   Or, if on Ubuntu:
-  #+BEGIN_SRC sh :tangle no
+  #+BEGIN_SRC shell
     sudo apt-get install fortune # Installs in /usr/share/games/fortunes
   #+END_SRC
 
@@ -2512,8 +2487,8 @@
 
 #+DESCRIPTION: A literate programming version of my Emacs Initialization script, loaded by the .emacs file.
 #+PROPERTY:    header-args:elisp  :tangle ~/.emacs.d/elisp/init-main.el
-#+PROPERTY:    header-args:sh     :tangle no
-#+PROPERTY:    header-args:       :results silent   :eval no-export   :comments org
+#+PROPERTY:    header-args:shell  :tangle no
+#+PROPERTY:    header-args        :results silent   :eval no-export   :comments org
 #+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil
 #+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
 #+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js

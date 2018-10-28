@@ -17,8 +17,9 @@ creating a better mode line in Emacs.
           line-number-mode nil)
   #+END_SRC
 
-  Let's trim the list of minor modes with few unicode icons, using the
-  magic of =setf=:
+  I normally just use =diminish= in the =use-package= declaration to hide
+  some minor modes, but let's use the magic of =setf=, to /trim/ a mode's
+  display to a unicode icon:
 
   #+BEGIN_SRC elisp
     (dolist (mm '((auto-revert-mode   . "♺")
@@ -67,7 +68,11 @@ creating a better mode line in Emacs.
       ;; (add-to-list 'sml/replacer-regexp-list '("^~/Work/" "♨:") t)
       ;; (add-to-list 'sml/replacer-regexp-list '("^~/Workspace/" "♨:"))
 
-      (sml/apply-theme 'dark))
+      (sml/apply-theme 'dark)
+
+      ;; Since I almost always use Git, let's shorten its display:
+      (setcdr (assq 'vc-mode mode-line-format)
+        '((:eval (replace-regexp-in-string "^ Git" "\xe0a0" vc-mode)))))
   #+END_SRC
 
   Hiding some Minor modes in the mode line is real swell, the
